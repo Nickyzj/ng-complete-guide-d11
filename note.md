@@ -118,3 +118,36 @@ onLoadServer(id: number) {
     this.router.navigate(['/servers', 1, 'edit'], {queryParams: {allowEdit: 1}, fragment: 'loading'});
   }
 ```
+---
+## Retrieving query params and fragment
+
+edit-server.component.ts
+```javascript
+import { ActivatedRoute } from '@angular/router';
+
+constructor(private serversService: ServersService,
+              private route: ActivatedRoute) { }
+
+ngOnInit() {
+    console.log(this.route.snapshot.queryParams);
+    console.log(this.route.snapshot.fragment);
+    this.server = this.serversService.getServer(1);
+    this.serverName = this.server.name;
+    this.serverStatus = this.server.status;
+  }
+```
+
+```javascript
+this.route.queryParams.subscribe();
+this.route.fragment.subscribe();
+```
+
+```html
+<a 
+        [routerLink]="['/users', user.id, user.name]"
+        href="#" 
+        class="list-group-item"
+        *ngFor="let user of users">
+        {{ user.name }}
+      </a>
+```
