@@ -298,3 +298,114 @@ app.module.ts
 ```javascript
 providers: [ServersService, AuthService, AuthGuard],
 ```
+---
+## CanDeactivateGuard
+app-routing.module.ts
+```javascript
+{ path: ':id/edit', component: EditServerComponent, canDeactivate: [CanDeactivateGuard] }
+```
+can-deactive-guard.service.ts
+```javascript
+import { Observable } from 'rxjs/Observable';
+import { CanDeactivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+
+export interface CanComponentDeactivate {
+    canDeactivate: () => Observable<boolean> | Promise<boolean> | boolean;
+}
+
+export class CanDeactivateGuard implements CanDeactivate<CanComponentDeactivate> {
+
+    canDeactivate(component: CanComponentDeactivate,
+                    currentRoute: ActivatedRouteSnapshot,
+                    currentState: RouterStateSnapshot,
+                    nextState?: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+                        return component.canDeactivate();
+                    }
+}
+```
+edit-server.component.ts
+```javascript
+export class EditServerComponent implements OnInit, CanComponentDeactivate {
+
+canDeactivate(): Observable<boolean> | Promise<boolean> | boolean {
+    if (!this.allowEdit) {
+      return true;
+    }
+    if ( ( this.serverName !== this.server.name || this.serverStatus !== this.server.status) && !this.changesSaved) {
+      return confirm('Do you want to discard the changes?');
+    } else {
+      return true;
+    }
+  }
+```
+---
+## passing static data to routes
+app-routing.module.ts
+```javascript
+{ path: 'not-found', component: ErrorPageComponent, data: { message: 'Page not found!'} },
+```
+error-page.component.ts
+```javascript
+import { ActivatedRoute, Data } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-error-page',
+  templateUrl: './error-page.component.html',
+  styleUrls: ['./error-page.component.css']
+})
+export class ErrorPageComponent implements OnInit {
+
+  errorMessage: string;
+
+  constructor(private route: ActivatedRoute) { }
+
+  ngOnInit() {
+    this.errorMessage = this.route.snapshot.data['message'];
+    this.route.data.subscribe(
+      (data: Data) => {
+        this.errorMessage = data['message'];
+      }
+    );
+  }
+}
+```
+---
+## the resolve guard
+server-resolver.service.ts
+```javascript
+import { Resolve, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { Observable } from 'rxjs/Observable';
+import { Injectable } from '@angular/core';
+
+import { ServersService } from '../servers.service';
+
+interface Server {
+    id: number;
+    name: string;
+    status: string;
+}
+
+@Injectable()
+export class ServerResolver implements Resolve<Server> {
+
+    constructor(private serversService: ServersService) {}
+
+    resolve( route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<Server> | Promise<Server> | Server {
+        return this.serversService.getServer(+route.params['id']);
+    }
+}
+```
+app-routing.module.ts
+```javascript
+{ path: ':id', component: ServerComponent, resolve: { server: ServerResolver } },
+```
+server.component.ts
+```javascript
+ngOnInit() {
+    this.route.data.subscribe(
+      (data: Data) => {
+        this.server = data['server'];
+      }
+    );
+```
